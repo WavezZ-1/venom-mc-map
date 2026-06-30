@@ -1,16 +1,4 @@
 {
-  "spots": [
-    {
-      "id": "sp_1782858931556",
-      "name": "wdwd",
-      "type": "weed",
-      "plz": "",
-      "note": "",
-      "latlng": {
-        "lat": 4392,
-        "lng": 3312
-      }
-    }
-  ],
+  "spots": [],
   "routes": []
 }
