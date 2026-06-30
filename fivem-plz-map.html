@@ -190,10 +190,10 @@ body { font-family:'Segoe UI',sans-serif; background:#0d1117; color:#e6edf3; hei
 
 <div id="legend">
   <h4>Legende</h4>
-  <div class="leg-row"><div class="leg-line" style="background:#44dd44"></div><span>Weed Route</span></div>
-  <div class="leg-row"><div class="leg-line" style="background:#cc44ff"></div><span>LSD Route</span></div>
-  <div class="leg-row"><div class="leg-line" style="background:#e8e8e8"></div><span>Kokain Route</span></div>
-  <div class="leg-row"><div class="leg-line" style="background:#ff8800"></div><span>Heroin Route</span></div>
+  <div class="leg-row"><div class="leg-dot" style="background:#44dd44"></div><span>Weed Route</span></div>
+  <div class="leg-row"><div class="leg-dot" style="background:#cc44ff"></div><span>LSD Route</span></div>
+  <div class="leg-row"><div class="leg-dot" style="background:#e8e8e8"></div><span>Kokain Route</span></div>
+  <div class="leg-row"><div class="leg-dot" style="background:#ff8800"></div><span>Heroin Route</span></div>
   <div class="leg-row"><div class="leg-dot"  style="background:#ff3333"></div><span>Waffen</span></div>
   <div class="leg-row"><div class="leg-dot"  style="background:#ffcc00"></div><span>Munition</span></div>
   <div class="leg-row"><div class="leg-dot"  style="background:#888888"></div><span>Schwarzmarkt</span></div>
@@ -373,8 +373,9 @@ async function ghSaveNow() {
 }
 
 // ─── STATE ─────────────────────────────────────────────────────────────────
-let state   = { spots:[], routes:[] };
-let layers  = {};
+let state     = { spots:[], routes:[] };
+let layers    = {};
+let dotLayers = {};
 let map, drawn;
 let pendingSpotLayer = null;
 let pendingRouteLine = null;
@@ -494,7 +495,11 @@ function onDrawEdited(e) {
     const spot = state.spots.find(s => s.id === id);
     if (spot) spot.latlng = l.getLatLng();
     const route = state.routes.find(r => r.id === id);
-    if (route) route.latlngs = l.getLatLngs().map(ll => ({lat:ll.lat,lng:ll.lng}));
+    if (route) {
+      route.latlngs = l.getLatLngs().map(ll => ({lat:ll.lat,lng:ll.lng}));
+      if (dotLayers[id]) map.removeLayer(dotLayers[id]);
+      dotLayers[id] = makeRouteDots(route).addTo(map);
+    }
   });
   save();
 }
@@ -542,10 +547,13 @@ function saveRoute() {
     latlngs: pendingRouteLine.getLatLngs().map(ll => ({lat:ll.lat,lng:ll.lng}))
   };
 
-  pendingRouteLine.setStyle({ color: cfg.line, weight: 3 });
-  pendingRouteLine.bindPopup(routePopup(route));
+  pendingRouteLine.setStyle({ opacity: 0, weight: 0 });
   drawn.addLayer(pendingRouteLine);
   layers[id] = pendingRouteLine;
+
+  const dots = makeRouteDots(route).addTo(map);
+  dotLayers[id] = dots;
+
   pendingRouteLine = null;
 
   state.routes.push(route);
@@ -571,6 +579,20 @@ function routePopup(r) {
   return `<div class="popup-title">${cfg.sym} ${r.name}</div>
     <div class="popup-meta">Typ: ${cfg.label}</div>
     ${r.note ? `<div class="popup-note">${r.note}</div>` : ''}`;
+}
+
+// Routen werden nur als einzelne Punkte dargestellt, keine verbundene Linie
+function makeRouteDots(r) {
+  const cfg   = TYPE[r.type] || TYPE.other;
+  const group = L.featureGroup();
+  r.latlngs.forEach(ll => {
+    const dot = L.circleMarker([ll.lat, ll.lng], {
+      radius: 7, color: '#fff', weight: 2, fillColor: cfg.line, fillOpacity: 1
+    });
+    dot.bindPopup(routePopup(r));
+    group.addLayer(dot);
+  });
+  return group;
 }
 
 // ─── ICONS ─────────────────────────────────────────────────────────────────
@@ -623,9 +645,15 @@ function renderList() {
       if (e.target.classList.contains('del-btn')) return;
       const l = layers[item.id];
       if (!l) return;
-      if (l.getLatLng) map.flyTo(l.getLatLng(), 1, {duration:0.6});
-      else if (l.getBounds) map.flyToBounds(l.getBounds(), {padding:[40,40], duration:0.6});
-      setTimeout(() => l.openPopup(), 650);
+      if (l.getLatLng) {
+        map.flyTo(l.getLatLng(), 1, {duration:0.6});
+        setTimeout(() => l.openPopup(), 650);
+      } else if (l.getBounds) {
+        map.flyToBounds(l.getBounds(), {padding:[40,40], duration:0.6});
+        const dots = dotLayers[item.id];
+        const first = dots && dots.getLayers()[0];
+        if (first) setTimeout(() => first.openPopup(), 650);
+      }
     });
     el.appendChild(d);
   });
@@ -635,6 +663,7 @@ function deleteItem(id, e) {
   if (e) e.stopPropagation();
   const l = layers[id];
   if (l) drawn.removeLayer(l);
+  if (dotLayers[id]) { map.removeLayer(dotLayers[id]); delete dotLayers[id]; }
   delete layers[id];
   state.spots  = state.spots.filter(s => s.id !== id);
   state.routes = state.routes.filter(r => r.id !== id);
@@ -644,6 +673,7 @@ function deleteItem(id, e) {
 function removeById(id) {
   state.spots  = state.spots.filter(s => s.id !== id);
   state.routes = state.routes.filter(r => r.id !== id);
+  if (dotLayers[id]) { map.removeLayer(dotLayers[id]); delete dotLayers[id]; }
   delete layers[id];
   save(); renderList();
 }
@@ -656,7 +686,9 @@ function layerToId(layer) {
 function clearAll() {
   if (!confirm('Wirklich alle Einträge löschen?')) return;
   drawn.clearLayers();
+  Object.values(dotLayers).forEach(d => map.removeLayer(d));
   layers = {};
+  dotLayers = {};
   state  = { spots:[], routes:[] };
   save(); renderList();
   toast('🗑 Alles gelöscht');
@@ -669,7 +701,9 @@ function save() {
 
 function loadState(src) {
   drawn.clearLayers();
+  Object.values(dotLayers).forEach(d => map.removeLayer(d));
   layers = {};
+  dotLayers = {};
 
   state.spots.forEach(s => {
     const m = L.marker([s.latlng.lat, s.latlng.lng], { icon: makeIcon(s.type) });
@@ -679,12 +713,13 @@ function loadState(src) {
   });
 
   state.routes.forEach(r => {
-    const cfg   = TYPE[r.type] || TYPE.other;
-    const lls   = r.latlngs.map(ll => [ll.lat, ll.lng]);
-    const poly  = L.polyline(lls, { color: cfg.line, weight: 3 });
-    poly.bindPopup(routePopup(r));
+    const lls  = r.latlngs.map(ll => [ll.lat, ll.lng]);
+    const poly = L.polyline(lls, { opacity: 0, weight: 0 });
     drawn.addLayer(poly);
     layers[r.id] = poly;
+
+    const dots = makeRouteDots(r).addTo(map);
+    dotLayers[r.id] = dots;
   });
 
   renderList();
