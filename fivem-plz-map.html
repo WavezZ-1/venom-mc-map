@@ -333,30 +333,19 @@ const TYPE = {
   other:        { color:'#aaaaaa', line:'#555555', sym:'📍', label:'Sonstiges'   },
 };
 
-// ─── GITHUB SYNC (zentraler Speicher für alle Member) ──────────────────────
-const GH_OWNER = 'WavezZ-1';
-const GH_REPO  = 'venom-mc-map';
-const GH_PATH  = 'data.json';
-const GH_TOKEN = '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';
-const GH_API   = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
-let ghSha = null;
-
-function b64encodeUtf8(str) { return btoa(unescape(encodeURIComponent(str))); }
-function b64decodeUtf8(str) { return decodeURIComponent(escape(atob(str))); }
+// ─── SYNC ÜBER CLOUDFLARE WORKER (zentraler Speicher für alle Member) ──────
+// Der Worker hält den GitHub-Token serverseitig, daher kein Secret im
+// Client-Code mehr. URL nach dem Worker-Deploy hier eintragen.
+const WORKER_URL = 'https://venom-map-proxy.ariss2267.workers.dev';
 
 async function ghLoad() {
   try {
-    const res = await fetch(GH_API, {
-      headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: 'application/vnd.github+json' }
-    });
-    if (res.status === 404) { ghSha = null; return { spots:[], routes:[] }; }
+    const res = await fetch(WORKER_URL);
     if (!res.ok) throw new Error('Status ' + res.status);
-    const data = await res.json();
-    ghSha = data.sha;
-    return JSON.parse(b64decodeUtf8(data.content));
+    return await res.json();
   } catch (e) {
     console.error('ghLoad', e);
-    toast('⚠ Laden von GitHub fehlgeschlagen, nutze lokalen Stand');
+    toast('⚠ Laden fehlgeschlagen, nutze lokalen Stand');
     const saved = localStorage.getItem(STORE_KEY);
     return saved ? JSON.parse(saved) : { spots:[], routes:[] };
   }
@@ -366,38 +355,20 @@ let ghSaveTimer = null;
 function ghSave() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
   clearTimeout(ghSaveTimer);
-  ghSaveTimer = setTimeout(() => ghSaveNow(true), 800);
+  ghSaveTimer = setTimeout(ghSaveNow, 800);
 }
 
-async function ghSaveNow(retry) {
+async function ghSaveNow() {
   try {
-    const body = {
-      message: 'Update map data',
-      content: b64encodeUtf8(JSON.stringify(state, null, 2)),
-    };
-    if (ghSha) body.sha = ghSha;
-    const res = await fetch(GH_API, {
+    const res = await fetch(WORKER_URL, {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${GH_TOKEN}`,
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state, null, 2)
     });
-    if (!res.ok) {
-      if (res.status === 409 && retry) {
-        const fresh = await fetch(GH_API, { headers: { Authorization: `Bearer ${GH_TOKEN}` } }).then(r => r.json());
-        ghSha = fresh.sha;
-        return ghSaveNow(false);
-      }
-      throw new Error('Status ' + res.status);
-    }
-    const data = await res.json();
-    ghSha = data.content.sha;
+    if (!res.ok) throw new Error('Status ' + res.status);
   } catch (e) {
     console.error('ghSaveNow', e);
-    toast('⚠ Speichern auf GitHub fehlgeschlagen (lokal gesichert)');
+    toast('⚠ Speichern fehlgeschlagen (lokal gesichert)');
   }
 }
 
