@@ -1,4 +1,16 @@
 {
-  "spots": [],
+  "spots": [
+    {
+      "id": "sp_1782861400049",
+      "name": "Weed-Verarbeiter",
+      "type": "weed",
+      "plz": "1001",
+      "note": "",
+      "latlng": {
+        "lat": 7806.471427220313,
+        "lng": 3851.5043958122596
+      }
+    }
+  ],
   "routes": []
 }
