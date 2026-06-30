@@ -32,6 +32,17 @@
         "lat": 7446,
         "lng": 2360.625
       }
+    },
+    {
+      "id": "sp_1782861604200",
+      "name": "Waffenteile-Verarbeiter",
+      "type": "waffen",
+      "plz": "1085",
+      "note": "",
+      "latlng": {
+        "lat": 6852.395039783535,
+        "lng": 2067.049898103575
+      }
     }
   ],
   "routes": []
