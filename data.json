@@ -142,6 +142,17 @@
         "lat": 3690.75,
         "lng": 3711
       }
+    },
+    {
+      "id": "sp_1782862409219",
+      "name": "Schwarzmarkt",
+      "type": "schwarzmarkt",
+      "plz": "6173",
+      "note": "",
+      "latlng": {
+        "lat": 3740.25,
+        "lng": 2766.75
+      }
     }
   ],
   "routes": []
