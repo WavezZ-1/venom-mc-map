@@ -334,7 +334,7 @@ const TYPE = {
 };
 
 // ─── GITHUB SYNC (zentraler Speicher für alle Member) ──────────────────────
-const GH_OWNER = 'wavezz-1';
+const GH_OWNER = 'WavezZ-1';
 const GH_REPO  = 'venom-mc-map';
 const GH_PATH  = 'data.json';
 const GH_TOKEN = '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';
@@ -499,13 +499,13 @@ function onDrawCreated(e) {
     document.getElementById('s-name').value  = '';
     document.getElementById('s-plz').value   = '';
     document.getElementById('s-note').value  = '';
-    document.getElementById('s-type').value  = 'blackmarket';
+    document.getElementById('s-type').value  = 'schwarzmarkt';
   } else if (e.layerType === 'polyline') {
     pendingRouteLine = e.layer;
     openM('m-route');
     document.getElementById('r-name').value = '';
     document.getElementById('r-note').value = '';
-    document.getElementById('r-type').value = 'drug';
+    document.getElementById('r-type').value = 'weed';
   }
 }
 
