@@ -1,4 +1,16 @@
 {
-  "spots": [],
+  "spots": [
+    {
+      "id": "sp_1782859607490",
+      "name": "wdwd",
+      "type": "schwarzmarkt",
+      "plz": "",
+      "note": "",
+      "latlng": {
+        "lat": 4050.3076426365437,
+        "lng": 4055.964496886036
+      }
+    }
+  ],
   "routes": []
 }
