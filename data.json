@@ -87,6 +87,17 @@
         "lat": 2984.9098586568302,
         "lng": 2432.8204555168168
       }
+    },
+    {
+      "id": "sp_1782862003621",
+      "name": "Waffenhersteller-Nahkampfwaffen",
+      "type": "waffen",
+      "plz": "3009",
+      "note": "",
+      "latlng": {
+        "lat": 6092.925200824602,
+        "lng": 4176.942718669014
+      }
     }
   ],
   "routes": []
