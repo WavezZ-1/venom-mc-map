@@ -641,11 +641,46 @@ function toggleSidebar() {
 
 const TYPE_ORDER = Object.keys(TYPE);
 
+function matchesFilter(item, kindFilter, typeFilter) {
+  const isRoute = !!item.latlngs;
+  if (kindFilter === 'spot'  && isRoute) return false;
+  if (kindFilter === 'route' && !isRoute) return false;
+  if (typeFilter !== 'all' && item.type !== typeFilter) return false;
+  return true;
+}
+
+// Blendet Spots/Routen auf der Karte selbst ein/aus, passend zum Sidebar-Filter
+function applyMapFilter(kindFilter, typeFilter) {
+  state.spots.forEach(s => {
+    const m = layers[s.id];
+    if (!m) return;
+    const show = matchesFilter(s, kindFilter, typeFilter);
+    if (show && !drawn.hasLayer(m)) drawn.addLayer(m);
+    if (!show && drawn.hasLayer(m)) drawn.removeLayer(m);
+  });
+
+  state.routes.forEach(r => {
+    const poly = layers[r.id];
+    const dots = dotLayers[r.id];
+    const show = matchesFilter(r, kindFilter, typeFilter);
+    if (poly) {
+      if (show && !drawn.hasLayer(poly)) drawn.addLayer(poly);
+      if (!show && drawn.hasLayer(poly)) drawn.removeLayer(poly);
+    }
+    if (dots) {
+      if (show && !map.hasLayer(dots)) dots.addTo(map);
+      if (!show && map.hasLayer(dots)) map.removeLayer(dots);
+    }
+  });
+}
+
 function renderList() {
   const el   = document.getElementById('items-list');
   const cnt  = document.getElementById('item-count');
   const kindFilter = document.getElementById('filter-kind').value;
   const typeFilter = document.getElementById('filter-type').value;
+
+  applyMapFilter(kindFilter, typeFilter);
 
   let all = [...state.spots, ...state.routes];
   if (kindFilter === 'spot')  all = all.filter(i => !i.latlngs);
