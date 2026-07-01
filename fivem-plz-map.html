@@ -36,6 +36,11 @@ body { font-family:'Segoe UI',sans-serif; background:#0d1117; color:#e6edf3; hei
 #sidebar.collapsed { width:0; overflow:hidden; }
 #sidebar-header { padding:12px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center; }
 #sidebar-header h2 { font-size:0.9rem; color:#f85149; }
+#sidebar-filter { display:flex; gap:6px; padding:10px 12px; border-bottom:1px solid #30363d; }
+#sidebar-filter select {
+  flex:1; background:#0d1117; border:1px solid #30363d; color:#e6edf3;
+  padding:5px 6px; border-radius:6px; font-size:0.75rem; outline:none;
+}
 #items-list { flex:1; overflow-y:auto; padding:8px; }
 #items-list::-webkit-scrollbar { width:4px; }
 #items-list::-webkit-scrollbar-track { background:#0d1117; }
@@ -183,6 +188,24 @@ body { font-family:'Segoe UI',sans-serif; background:#0d1117; color:#e6edf3; hei
     <div id="sidebar-header">
       <h2>Eingetragene Spots</h2>
       <span id="item-count" style="font-size:0.78rem;color:#8b949e;">0 Einträge</span>
+    </div>
+    <div id="sidebar-filter">
+      <select id="filter-kind" onchange="renderList()">
+        <option value="all">Alle</option>
+        <option value="spot">Nur Spots</option>
+        <option value="route">Nur Routen</option>
+      </select>
+      <select id="filter-type" onchange="renderList()">
+        <option value="all">Alle Typen</option>
+        <option value="weed">🌿 Weed</option>
+        <option value="lsd">🔮 LSD</option>
+        <option value="kokain">❄ Kokain</option>
+        <option value="heroin">💉 Heroin</option>
+        <option value="waffen">🔫 Waffen</option>
+        <option value="munition">🎯 Munition</option>
+        <option value="schwarzmarkt">🖤 Schwarzmarkt</option>
+        <option value="other">📍 Sonstiges</option>
+      </select>
     </div>
     <div id="items-list"></div>
   </div>
@@ -616,14 +639,28 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
+const TYPE_ORDER = Object.keys(TYPE);
+
 function renderList() {
-  const el  = document.getElementById('items-list');
-  const cnt = document.getElementById('item-count');
-  const all = [...state.spots, ...state.routes];
+  const el   = document.getElementById('items-list');
+  const cnt  = document.getElementById('item-count');
+  const kindFilter = document.getElementById('filter-kind').value;
+  const typeFilter = document.getElementById('filter-type').value;
+
+  let all = [...state.spots, ...state.routes];
+  if (kindFilter === 'spot')  all = all.filter(i => !i.latlngs);
+  if (kindFilter === 'route') all = all.filter(i => !!i.latlngs);
+  if (typeFilter !== 'all')   all = all.filter(i => i.type === typeFilter);
+
+  all.sort((a, b) => {
+    const diff = TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+    return diff !== 0 ? diff : a.name.localeCompare(b.name);
+  });
+
   cnt.textContent = all.length + ' Eintr' + (all.length === 1 ? 'ag' : 'äge');
 
   if (!all.length) {
-    el.innerHTML = '<p style="color:#484f58;font-size:0.83rem;text-align:center;margin-top:24px;">Noch keine Einträge.<br>Nutze die Zeichenwerkzeuge links.</p>';
+    el.innerHTML = '<p style="color:#484f58;font-size:0.83rem;text-align:center;margin-top:24px;">Keine Einträge für diesen Filter.</p>';
     return;
   }
 
