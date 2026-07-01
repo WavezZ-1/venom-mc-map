@@ -219,6 +219,17 @@
         "lat": 2090.2076451874345,
         "lng": 3054.701294725885
       }
+    },
+    {
+      "id": "sp_1782942216500",
+      "name": "Schwarzmarkt",
+      "type": "schwarzmarkt",
+      "plz": "1003",
+      "note": "",
+      "latlng": {
+        "lat": 7962,
+        "lng": 3827
+      }
     }
   ],
   "routes": []
