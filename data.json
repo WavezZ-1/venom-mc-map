@@ -230,6 +230,17 @@
         "lat": 7962,
         "lng": 3827
       }
+    },
+    {
+      "id": "sp_1783005145483",
+      "name": "Waffenteile-Sammler",
+      "type": "waffen",
+      "plz": "9005",
+      "note": "",
+      "latlng": {
+        "lat": 2339.467696989103,
+        "lng": 2520.2271784695167
+      }
     }
   ],
   "routes": []
